@@ -2,12 +2,12 @@
 
 `v0.0.1 - v0.9.9`
 
-- Project Setup
-- Initial commit
+- Project Setup :heavy_check_mark:
+- Initial commit :heavy_check_mark:
 - Add support for 1inch price aggregator
 - Add ability to monitor multiple tokens concurrently
 - Add ability to buy and sell tokens across various supported exchanges on different blockchains
-- Add support for ethereum blockchain,
+- Add support for ethereum blockchain
 
 `v1.0.0`
 
