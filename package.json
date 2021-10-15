@@ -1,0 +1,32 @@
+{
+  "name": "multidexarbbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node-dev -r dotenv/config src/index.ts"
+  },
+  "author": {
+    "name": "Dennoh Peter",
+    "email": "dennoh@coredevs.co"
+  },
+  "keywords": [
+    "Arbitrage",
+    "MultiDex",
+    "Trading"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@types/node-cron": "^3.0.0",
+    "axios": "^0.22.0",
+    "bignumber.js": "^9.0.1",
+    "chalk": "^4.1.2",
+    "chalk-table": "^1.0.2",
+    "dotenv": "^10.0.0",
+    "ethers": "^5.4.7",
+    "mongoose": "^6.0.9",
+    "node-cron": "^3.0.0",
+    "telegraf": "^4.4.2"
+  }
+}
