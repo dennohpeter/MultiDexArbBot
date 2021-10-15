@@ -43,11 +43,11 @@ to get the best exchange rates across different decentralized exchanges on diffe
 
 - Dennoh Peter `` (Rust`edSoul) ``
 
-#### Contribution
+#### CONTRIBUTION
 
 - If you would like to add a feature or suggestion please feel free to fork, open a pull request or an issue.
 
-- Wanna Buy the Devs Some Coffee ☕️☕️☕️☕️
+- Wanna Buy the Devs Some Coffee ☕️☕️☕️☕️?
 
 ETH
 
