@@ -59,7 +59,7 @@ const Main = async () => {
 
     console.log(`---`.repeat(10));
 
-    let ethAmount = new BigNumber(config.ETH_IN_AMOUNT).shiftedBy(18).toString()
+    let ethInAmount = new BigNumber(config.ETH_IN_AMOUNT).shiftedBy(18).toString()
     schedule(`*/${config.PRICE_CHECK_INTERVAL_IN_SECONDS} * * * * *`, async function () {
         console.log(`***`.repeat(10));
         MONITORED_TOKENS.forEach(async (token: any) => {
@@ -67,7 +67,7 @@ const Main = async () => {
                 const buy_quote: Quote = await oneInch.getQuote({
                     srcToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
                     toToken: token.address,
-                    srcAmount: ethAmount
+                    srcAmount: ethInAmount
                 })
                 let token_amount = buy_quote.toAmount
                 const sell_quote: Quote = await oneInch.getQuote({
@@ -91,6 +91,7 @@ const Main = async () => {
                 };
                 const timestamp = new Date()
                 let eth_out = parseFloat(new BigNumber(sell_quote.toAmount).shiftedBy(-sell_quote.toToken.decimals).toFixed(6))
+
                 const profit_pct = ((eth_out - config.ETH_IN_AMOUNT) / config.ETH_IN_AMOUNT) * 100
                 let token_out = parseFloat(new BigNumber(token_amount).shiftedBy(-buy_quote.toToken.decimals).toFixed(6))
                 let best_buy_protocols = (await flat(buy_quote.protocols)).map((quote: any) => quote.name).join(',')
@@ -107,7 +108,7 @@ const Main = async () => {
                         rate: `${config.PRICE_CHECK_INTERVAL_IN_SECONDS}s`
                     },
                 ]);
-                if (!(JSON.stringify(best_buy_protocols) == JSON.stringify(best_sell_protocols))) {
+                if (JSON.stringify(best_buy_protocols) != JSON.stringify(best_sell_protocols)) {
                     console.log(table);
                 }
 
