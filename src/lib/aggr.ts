@@ -19,12 +19,15 @@ export abstract class Aggr {
      * @param nonce - wallet current nonce 
      * @returns Tx hash if successful else error message
      */
-    sendTx = async (params: { data: any, nonce: number }) => {
-        const { data, nonce } = params
+    sendTx = async (params: { data: any, gasLimit?: string, nonce: number }) => {
+        const { data, gasLimit, nonce } = params
         try {
 
-            if (!isNaN(nonce)) {
-                data.nonce = nonce + 1
+            // if (!isNaN(nonce)) {
+            //     data.nonce = nonce + 1
+            // }
+            if (gasLimit) {
+                data.gasLimit = gasLimit
             }
 
             const tx = await this.account.sendTransaction(data)

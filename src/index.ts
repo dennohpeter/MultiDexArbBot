@@ -138,7 +138,7 @@ const Main = async () => {
                             console.log(`Buy Tx Data:`, txData);
 
                             // send a buy Tx
-                            nonce++;
+                            nonce += 1;
                             oneInch.sendTx({
                                 data: txData.tx,
                                 nonce
@@ -156,13 +156,13 @@ const Main = async () => {
                                          *  Approve Token if it has not been approved before and save it to db
                                          */
                                         // approve if token has not been approved
-                                        const token_is_approved = await Approve.exists({ token: token, by: process.env.PUBLIC_KEY!.toLowerCase() })
+                                        const token_is_approved = await Approve.exists({ token: token })
                                         if (!token_is_approved) {
                                             // approve if not approved
                                             message = `Approving ${token.name}...`
                                             sendMessage(users, message)
                                             let txData = await oneInch.approve(token.address)
-                                            nonce++;
+                                            nonce += 1;
                                             await oneInch.sendTx({
                                                 data: txData.tx,
                                                 nonce
@@ -182,7 +182,7 @@ const Main = async () => {
                                         let tries = 0
                                         let tokenBalance = '0'
                                         while (tries < 2000) {
-                                            tokenBalance = await oneInch.balanceOf(tx.toToken.address)
+                                            tokenBalance = await oneInch.balanceOf(token.address)
                                             if (parseInt(tokenBalance) > parseInt(new BigNumber(token_amount).multipliedBy(0.5).toString())) {
                                                 break
                                             }
@@ -206,10 +206,11 @@ const Main = async () => {
                                         console.log(`Sell Tx Data:`, txData);
 
                                         // send the sell Tx
-                                        nonce++;
+                                        nonce += 1;
                                         oneInch.sendTx({
                                             data: txData.tx,
-                                            nonce
+                                            nonce,
+                                            gasLimit: config.GAS_LIMIT
                                         }).then(async (tx: any) => {
                                             if (tx.hash) {
                                                 console.log(`Tx for Sell:`, tx.hash)

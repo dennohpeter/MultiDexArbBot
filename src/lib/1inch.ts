@@ -96,10 +96,11 @@ export class OneInch extends Aggr {
                 method: "GET",
                 url: `${this.API_URL}${config.NETWORK.ID}/approve/calldata?tokenAddress=${tokenAddress}`
             })
-            delete data.tx.gasPrice; //ethersjs will find the gasPrice needed   
-            delete data.tx.gas;
+            console.log(data)
+            delete data.gasPrice; //ethersjs will find the gasPrice needed   
+            delete data.gas;
 
-            data.tx["value"] = toHex(parseInt(data.tx["value"]))
+            data["value"] = toHex(parseInt(data["value"]))
             return data
         } catch (error: any) {
             throw new Error(error);

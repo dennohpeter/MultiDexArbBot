@@ -19,8 +19,8 @@ export const config = {
         SELL: 2
     },
     SLIPPAGE: 0.5,
+    GAS_LIMIT: process.env.GAS_LIMIT!,
     EXPLORER: process.env.EXPLORER || 'https://etherscan.io/',
-
     PRICE_CHECK_INTERVAL_IN_SECONDS: process.env.PRICE_CHECK_INTERVAL_IN_SECONDS || 45,
     ETH_IN_AMOUNT: parseFloat(process.env.ETH_IN_AMOUNT!),
     DB_URL: process.env.DB_URL!
