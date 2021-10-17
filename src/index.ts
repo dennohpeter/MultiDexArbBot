@@ -8,6 +8,7 @@ const chalkTable = require('chalk-table');
 import BigNumber from "bignumber.js";
 import { buildTradeMsg, flat } from "./utils";
 import { MONITORED_TOKENS } from "./data/token";
+import { Approve } from "./models";
 
 const Main = async () => {
     const oneInch = new OneInch()

@@ -2,7 +2,7 @@ export interface Token {
     symbol: string,
     name: string,
     address: string,
-    decimals: number,
+    decimals?: number,
     logoURI?: string
 }
 export interface Quote {
