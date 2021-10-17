@@ -6,7 +6,7 @@
 - Initial commit :heavy_check_mark:
 - Add support for 1inch price aggregator :heavy_check_mark:
 - Add ability to monitor multiple tokens concurrently :heavy_check_mark:
-- Add ability to buy and sell tokens across various supported exchanges on different blockchains
+- Add ability to buy and sell tokens across various supported exchanges on different blockchains :heavy_check_mark:
 - Add support for ethereum blockchain :heavy_check_mark:
 
 `v1.0.0`
@@ -29,11 +29,11 @@
 
 `v1.0.5`
 
-- Integrate Telegram for notifications
+- Integrate Telegram for notifications :heavy_check_mark:
 
 `v1.0.6`
 
-- Add suppport for auto approval of assets
+- Add suppport for auto approval of assets :heavy_check_mark:
 
 `v1.0.7`
 

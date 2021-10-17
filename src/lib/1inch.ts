@@ -102,7 +102,7 @@ export class OneInch extends Aggr {
             data.tx["value"] = toHex(parseInt(data.tx["value"]))
             return data
         } catch (error: any) {
-            throw new Error(JSON.stringify(error));
+            throw new Error(error);
         }
     }
 

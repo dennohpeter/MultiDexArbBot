@@ -1,8 +1,10 @@
 import BigNumber from "bignumber.js"
 import { config } from "../../config"
+import { bot } from "../lib/bot"
+import { UserDoc } from "../models"
 import { Direction } from "../types"
 
-export const flat = async (arr: Array<any>, start: number = 0, end: number = 3): Promise<Array<any>> => {
+export const flat = async (arr: any, start: number = 0, end: number = 3): Promise<Array<any>> => {
     if (start < end) {
         start += 1
         return flat([].concat(...arr), start)
@@ -30,7 +32,7 @@ export const buildTradeMsg = async (params: { data: any, profit_pct: number, sid
         msg += `\n*ETH Amount:* ${await humanizeBalance(data.toTokenAmount, data.toToken.decimals)}`
     } else {
         msg += `\n*ETH Amount:* ${await humanizeBalance(data.fromTokenAmount, data.fromToken.decimals)}`
-        msg += `\n*Token Amount:* ${await humanizeBalance(data.toTokenAmount, data.toToken.decimals}`
+        msg += `\n*Token Amount:* ${await humanizeBalance(data.toTokenAmount, data.toToken.decimals)}`
         msg += `\n*Token:* ${data.fromToken.name}`
     }
     msg += `\n*Profit PCT:* ${profit_pct.toFixed(6)}%`
@@ -39,4 +41,29 @@ export const buildTradeMsg = async (params: { data: any, profit_pct: number, sid
     msg += `\n*Hash:* [${data.hash.toUpperCase()}](${config.EXPLORER}${data.hash})`
 
     return msg
+}
+
+export const sendMessage = async (users: UserDoc[], message: string) => {
+
+    users.map(async (user: UserDoc) => {
+        try {
+            await bot.telegram.sendMessage(user.tg_id, message
+                .replaceAll("_", "\\_")
+                .replaceAll("|", "\\|")
+                .replaceAll(".", "\\.")
+                .replaceAll("{", "\\{")
+                .replaceAll("+", "\\+")
+                .replaceAll("}", "\\}")
+                .replaceAll("=", "\\=")
+                .replaceAll(">", "\\>")
+                .replaceAll("<", "\\<")
+                .replaceAll("-", "\\-")
+                .replaceAll("!", "\\!"),
+                { parse_mode: 'MarkdownV2', disable_web_page_preview: true })
+        } catch (error) {
+            console.log(error);
+
+        }
+    }
+    )
 }

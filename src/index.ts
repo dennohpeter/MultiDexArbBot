@@ -6,34 +6,35 @@ import { OneInch } from "./lib";
 import { Quote, Direction } from "./types";
 const chalkTable = require('chalk-table');
 import BigNumber from "bignumber.js";
-import { buildTradeMsg, flat } from "./utils";
+import { buildTradeMsg, flat, sendMessage } from "./utils";
 import { MONITORED_TOKENS } from "./data/token";
-import { Approve } from "./models";
+import { Approve, User } from "./models";
+import { bot } from "./lib/bot";
 
 const Main = async () => {
     const oneInch = new OneInch()
     console.log('Starting...');
     console.log(`---`.repeat(10));
 
-    // try {
-    //     bot.stop()
-    // }
-    // catch (err) {
-    // }
+    try {
+        bot.stop()
+    }
+    catch (err) {
+    }
 
-    // console.log('Connecting to telegram bot...\n---');
-    // await bot.launch().then((result) => {
-    //     console.log('Connected to telegram bot!');
+    console.log('Connecting to telegram bot...\n---');
+    await bot.launch().then((result) => {
+        console.log('Connected to telegram bot ✅✅✅');
 
-    // }).catch(async (err) => {
-    //     let error = JSON.parse(JSON.stringify(err))
-    //     console.log('Telegram Error:', error?.message);
+    }).catch(async (err) => {
+        let error = JSON.parse(JSON.stringify(err))
+        console.log('Telegram Error:', error?.message);
 
-    // }).catch((error: any) => {
-    //     console.log('Telegram error:', error);
-    // })
+    }).catch((error: any) => {
+        console.log('Telegram error:', error);
+    })
 
-    // console.log(`---`.repeat(10));
+    console.log(`---`.repeat(10));
     console.log('Connecting to MongoDb...\n---');
     const options = {
         useNewUrlParser: true,
@@ -44,7 +45,7 @@ const Main = async () => {
     }
 
     await connect(config.DB_URL, options).then((result) => {
-        console.log("Connected to MongoDb :)");
+        console.log("Connected to MongoDb :) ✅✅✅");
     }).catch(async (err) => {
         let error = JSON.parse(JSON.stringify(err))
         console.log('Mongo Error:', error);
@@ -53,7 +54,7 @@ const Main = async () => {
 
     await oneInch.getProtocols()
         .then((protocols: string[]) => {
-            console.log(`Finding the best route for trade on the following exchanges ${protocols.join(', ')}...`);
+            console.log(`Finding the best route for trade on: ${protocols.join(', ')}...👀👀👀`);
         })
         .catch((err: any) => { })
 
@@ -62,6 +63,7 @@ const Main = async () => {
     let ethInAmount = new BigNumber(config.ETH_IN_AMOUNT).shiftedBy(18).toString()
     let on_cooldown = false
     let message = ''
+    let users = await User.find({ is_active: true })
 
     schedule(`*/${config.PRICE_CHECK_INTERVAL_IN_SECONDS} * * * * *`, async function () {
         console.log(`***`.repeat(10));
@@ -93,10 +95,10 @@ const Main = async () => {
                     ]
                 };
                 const timestamp = new Date()
-                let eth_out = parseFloat(new BigNumber(sell_quote.toAmount).shiftedBy(-sell_quote.toToken.decimals).toFixed(6))
+                let eth_out = parseFloat(new BigNumber(sell_quote.toAmount).shiftedBy(-sell_quote.toToken.decimals!).toFixed(6))
 
                 const profit_pct = ((eth_out - config.ETH_IN_AMOUNT) / config.ETH_IN_AMOUNT) * 100
-                let token_out = parseFloat(new BigNumber(token_amount).shiftedBy(-buy_quote.toToken.decimals).toFixed(6))
+                let token_out = parseFloat(new BigNumber(token_amount).shiftedBy(-buy_quote.toToken.decimals!).toFixed(6))
                 let best_buy_protocols = (await flat(buy_quote.protocols)).map((quote: any) => quote.name).join(',')
                 let best_sell_protocols = (await flat(sell_quote.protocols)).map((quote: any) => quote.name).join(',')
                 const table = chalkTable(options, [
@@ -125,7 +127,7 @@ const Main = async () => {
                          */
                         try {
 
-                            console.log(`Initiating a buy for token ${token.ticker} ...`);
+                            console.log(`Initiating a buy for token ${token.symbol} ...`);
                             // build  buy Tx
                             let txData = await oneInch.buildTx({
                                 srcToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -143,10 +145,11 @@ const Main = async () => {
                             }).then(async (tx: any) => {
                                 if (tx.hash) {
 
+                                    console.log('Tx hash for buy:', tx.hash)
                                     // build Buy Tg Msg
-                                    message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.BUY })
+                                    // message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.BUY })
                                     // send Msg to Tg
-                                    sendMessage(users, message);
+                                    // sendMessage(users, message);
 
                                     try {
                                         /**
@@ -156,7 +159,7 @@ const Main = async () => {
                                         const token_is_approved = await Approve.exists({ token: token, by: process.env.PUBLIC_KEY!.toLowerCase() })
                                         if (!token_is_approved) {
                                             // approve if not approved
-                                            message = `Approving ${token.description}...`
+                                            message = `Approving ${token.name}...`
                                             sendMessage(users, message)
                                             let txData = await oneInch.approve(token.address)
                                             nonce++;
@@ -164,7 +167,7 @@ const Main = async () => {
                                                 data: txData.tx,
                                                 nonce
                                             }).then((tx: any) => {
-                                                console.log(`${token.ticker} has been approved successfully.`)
+                                                console.log(`${token.symbol} has been approved successfully.`)
                                                 sendMessage(users, message)
                                             }).catch((err) => {
                                                 console.log(`Error: `, err)
@@ -192,7 +195,7 @@ const Main = async () => {
                                         /**
                                          * Sell the bought tokens/assets to the exchange with the best rates
                                          */
-                                        message = `Initiating a sell for token ${token.ticker}...`
+                                        message = `Initiating a sell for token ${token.symbol}...`
                                         // build  Sell Tx
                                         let txData = await oneInch.buildTx({
                                             srcToken: token.address,
@@ -209,16 +212,21 @@ const Main = async () => {
                                             nonce
                                         }).then(async (tx: any) => {
                                             if (tx.hash) {
-
+                                                console.log(`Tx for Sell:`, tx.hash)
                                                 // build Sell Tg Msg
-                                                message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.SELL })
+                                                // message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.SELL })
                                                 // send Msg to Tg
-                                                sendMessage(users, message);
+                                                // sendMessage(users, message);
 
+                                                // unlock to continue trading
+                                                on_cooldown = true
 
                                             }
                                         }).catch((err) => {
                                             console.log(`Error:`, err)
+
+                                            // unlock to continue trading
+                                            on_cooldown = true
                                         })
 
                                         /**
@@ -231,8 +239,12 @@ const Main = async () => {
                                     }
                                 }
                             }
-                            ).catch((err) => {
+                            ).catch((err: any) => {
+
                                 console.log(`Error:`, err);
+
+                                // unlock to continue trading
+                                on_cooldown = true
                             });
 
 
@@ -248,7 +260,7 @@ const Main = async () => {
 
 
             } catch (error: any) {
-                console.error('Error:', JSON.parse(JSON.stringify(error)).code);
+                // console.error('Error:', error);
             }
 
         });
