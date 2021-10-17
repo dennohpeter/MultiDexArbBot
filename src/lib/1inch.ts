@@ -1,6 +1,7 @@
 import axios from "axios";
 import { config } from "../../config";
 import { Quote } from "../types/1inch";
+import { toHex } from "../utils";
 import { Aggr } from "./aggr";
 
 export class OneInch extends Aggr {
@@ -42,13 +43,24 @@ export class OneInch extends Aggr {
      * @param slippage - slippage tolerance
      * @returns tx data that can be send to the network
      */
-    buildTx = async (srcToken: string, toToken: string, srcAmount: number, slippage?: number): Promise<string> => {
+    buildTx = async (params: { srcToken: string, toToken: string, srcAmount: number | string, slippage?: number, gasLimit?: string }) => {
+        const { srcToken, toToken, srcAmount, slippage, gasLimit } = params;
         try {
             let defaultSlippage = 0.5
-            const { data } = await axios({
+            console.log(defaultSlippage)
+            const { data }: any = await axios({
                 method: "GET",
-                url: `${this.API_URL}${config.NETWORK.ID}/swap?fromTokenAddress=${srcToken}&toTokenAddress=${toToken}&amount=${srcAmount}&fromAddress=${config.WALLET.PUBLIC_KEY}&disableEstimate=false&slippage=${slippage ? `${slippage}` : defaultSlippage}`
+                url: `${this.API_URL}${config.NETWORK.ID}/swap?fromTokenAddress=${srcToken}&toTokenAddress=${toToken}&amount=${srcAmount}&fromAddress=${config.WALLET.PUBLIC_KEY}&disableEstimate=true&slippage=${slippage ? `${slippage}` : defaultSlippage}`
             })
+            delete data.tx.gasPrice; //ethersjs will find the gasPrice needed   
+            delete data.tx.gas;
+
+            if (gasLimit) {
+                data.tx.gasLimit = toHex(parseInt(gasLimit))
+            }
+
+            data.tx["value"] = toHex(parseInt(data.tx["value"]))
+
             return data
         } catch (error: any) {
             throw new Error(JSON.stringify(error));
@@ -80,10 +92,14 @@ export class OneInch extends Aggr {
      */
     approve = async (tokenAddress: string, amount?: string) => {
         try {
-            const { data } = await axios({
+            const { data }: any = await axios({
                 method: "GET",
                 url: `${this.API_URL}${config.NETWORK.ID}/approve/calldata?tokenAddress=${tokenAddress}`
             })
+            delete data.tx.gasPrice; //ethersjs will find the gasPrice needed   
+            delete data.tx.gas;
+
+            data.tx["value"] = toHex(parseInt(data.tx["value"]))
             return data
         } catch (error: any) {
             throw new Error(JSON.stringify(error));

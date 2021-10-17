@@ -12,20 +12,20 @@
 `v1.0.0`
 
 - Bug fix and optimizations
-- Add support for binance smart chain(BSC)
+- Add support for binance smart chain(BSC) :heavy_check_mark:
 - Testing on mainnet
 
 `v1.0.2`
 
-- Add support for Optimism Blockchain
+- Add support for Optimism Blockchain :heavy_check_mark:
 
 `v1.0.3`
 
-- Add support for Arbitrum Blockchain
+- Add support for Arbitrum Blockchain :heavy_check_mark:
 
 `v1.0.4`
 
-- Add support for Polygon Matic Blockchain
+- Add support for Polygon Matic Blockchain :heavy_check_mark:
 
 `v1.0.5`
 

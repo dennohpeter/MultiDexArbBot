@@ -13,13 +13,18 @@ export abstract class Aggr {
         this.account = new Wallet(config.WALLET.PRIVATE_KEY, this.provider);
         this.API_URL = api_url
     }
-
+    /**
+     * Sends a tx to the blockchain
+     * @param data - Tx data 
+     * @param nonce - wallet current nonce 
+     * @returns Tx hash if successful else error message
+     */
     sendTx = async (params: { data: any, nonce: number }) => {
         const { data, nonce } = params
         try {
 
             if (!isNaN(nonce)) {
-                data.nonce = nonce
+                data.nonce = nonce + 1
             }
 
             const tx = await this.account.sendTransaction(data)
@@ -47,9 +52,9 @@ export abstract class Aggr {
 
     /**
      * Gets the current nonce of a wallet
-     * @returns nonce
+     * @returns  wallet's current nonce
      */
     getNonce = async (): Promise<number> => {
-        return await this.provider.getTransactionCount(config.WALLET.PUBLIC_KEY)
+        return await this.account.getTransactionCount()
     }
 }

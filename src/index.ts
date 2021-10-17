@@ -2,11 +2,11 @@ import chalk from "chalk";
 import { connect } from "mongoose";
 import { schedule } from "node-cron";
 import { config } from "../config";
-import { OneInch } from "./lib/1inch.io";
-import { Quote, Token } from "./types/1inch";
+import { OneInch } from "./lib";
+import { Quote, Direction } from "./types";
 const chalkTable = require('chalk-table');
 import BigNumber from "bignumber.js";
-import { flat } from "./utils";
+import { buildTradeMsg, flat } from "./utils";
 import { MONITORED_TOKENS } from "./data/token";
 
 const Main = async () => {
@@ -37,7 +37,6 @@ const Main = async () => {
     const options = {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        useCreateIndex: true,
         keepAlive: true,
         connectTimeoutMS: 60000,
         socketTimeoutMS: 60000,
@@ -47,7 +46,7 @@ const Main = async () => {
         console.log("Connected to MongoDb :)");
     }).catch(async (err) => {
         let error = JSON.parse(JSON.stringify(err))
-        console.log('Mongo Error:', error?.name);
+        console.log('Mongo Error:', error);
     });
     console.log(`---`.repeat(10));
 
@@ -60,6 +59,9 @@ const Main = async () => {
     console.log(`---`.repeat(10));
 
     let ethInAmount = new BigNumber(config.ETH_IN_AMOUNT).shiftedBy(18).toString()
+    let on_cooldown = false
+    let message = ''
+
     schedule(`*/${config.PRICE_CHECK_INTERVAL_IN_SECONDS} * * * * *`, async function () {
         console.log(`***`.repeat(10));
         MONITORED_TOKENS.forEach(async (token: any) => {
@@ -110,7 +112,139 @@ const Main = async () => {
                 ]);
                 if (JSON.stringify(best_buy_protocols) != JSON.stringify(best_sell_protocols)) {
                     console.log(table);
+
+
+                    if (profit_pct >= config.PROFIT_THRESHOLD.BUY && !on_cooldown) {
+                        let nonce: number = await oneInch.getNonce()
+                        console.log(`Nonce:`, nonce);
+
+                        on_cooldown = true
+                        /**
+                         * Start of Buy => Approve? => Sell Txs
+                         */
+                        try {
+
+                            console.log(`Initiating a buy for token ${token.ticker} ...`);
+                            // build  buy Tx
+                            let txData = await oneInch.buildTx({
+                                srcToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                                toToken: token.address,
+                                srcAmount: ethInAmount,
+                                slippage: config.SLIPPAGE
+                            })
+                            console.log(`Buy Tx Data:`, txData);
+
+                            // send a buy Tx
+                            nonce++;
+                            oneInch.sendTx({
+                                data: txData.tx,
+                                nonce
+                            }).then(async (tx: any) => {
+                                if (tx.hash) {
+
+                                    // build Buy Tg Msg
+                                    message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.BUY })
+                                    // send Msg to Tg
+                                    sendMessage(users, message);
+
+                                    try {
+                                        /**
+                                         *  Approve Token if it has not been approved before and save it to db
+                                         */
+                                        // approve if token has not been approved
+                                        const token_is_approved = await Approve.exists({ token: token, by: process.env.PUBLIC_KEY!.toLowerCase() })
+                                        if (!token_is_approved) {
+                                            // approve if not approved
+                                            message = `Approving ${token.description}...`
+                                            sendMessage(users, message)
+                                            let txData = await oneInch.approve(token.address)
+                                            nonce++;
+                                            await oneInch.sendTx({
+                                                data: txData.tx,
+                                                nonce
+                                            }).then((tx: any) => {
+                                                console.log(`${token.ticker} has been approved successfully.`)
+                                                sendMessage(users, message)
+                                            }).catch((err) => {
+                                                console.log(`Error: `, err)
+                                            });
+                                        }
+
+
+                                        /**
+                                         * Get the balance of  the bought token shpuld be atleast be 1/2 of what was expected
+                                         */
+
+                                        let tries = 0
+                                        let tokenBalance = '0'
+                                        while (tries < 2000) {
+                                            tokenBalance = await oneInch.balanceOf(tx.toToken.address)
+                                            if (parseInt(tokenBalance) > parseInt(new BigNumber(token_amount).multipliedBy(0.5).toString())) {
+                                                break
+                                            }
+                                            tries++
+                                        }
+                                        /**
+                                         * End of Balance Check
+                                         */
+
+                                        /**
+                                         * Sell the bought tokens/assets to the exchange with the best rates
+                                         */
+                                        message = `Initiating a sell for token ${token.ticker}...`
+                                        // build  Sell Tx
+                                        let txData = await oneInch.buildTx({
+                                            srcToken: token.address,
+                                            toToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                                            srcAmount: tokenBalance,
+                                            slippage: config.SLIPPAGE
+                                        })
+                                        console.log(`Sell Tx Data:`, txData);
+
+                                        // send the sell Tx
+                                        nonce++;
+                                        oneInch.sendTx({
+                                            data: txData.tx,
+                                            nonce
+                                        }).then(async (tx: any) => {
+                                            if (tx.hash) {
+
+                                                // build Sell Tg Msg
+                                                message = await buildTradeMsg({ data: tx, profit_pct: profit_pct, side: Direction.SELL })
+                                                // send Msg to Tg
+                                                sendMessage(users, message);
+
+
+                                            }
+                                        }).catch((err) => {
+                                            console.log(`Error:`, err)
+                                        })
+
+                                        /**
+                                         * End of Sell Tx
+                                         */
+
+                                    }
+                                    catch (error) {
+                                        console.error(`Error:`, error)
+                                    }
+                                }
+                            }
+                            ).catch((err) => {
+                                console.log(`Error:`, err);
+                            });
+
+
+                        } catch (error) {
+                            console.error(`Error:`, error)
+                        }
+                        /**
+                        * End of Buy => Approve? => Sell Txs
+                        */
+
+                    }
                 }
+
 
             } catch (error: any) {
                 console.error('Error:', JSON.parse(JSON.stringify(error)).code);
