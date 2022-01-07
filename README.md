@@ -26,7 +26,7 @@ to get the best exchange rates across different decentralized exchanges on diffe
 - Rename `example.env` to `.env`
 
 ```
-    mv example.env to .env
+    mv example.env .env
 ```
 
 - Update `.env` to contain your trading preferences and wallet info such private and public key
